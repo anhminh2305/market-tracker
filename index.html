@@ -3,229 +3,173 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI Market Insight - Giá Vàng & Bitcoin</title>
+    <title>AI Market Tracker - Gold & Bitcoin</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
     <style>
-        body { font-family: 'Inter', sans-serif; background-color: #0f172a; color: #f8fafc; }
-        .glass-card { background: rgba(30, 41, 59, 0.7); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.1); }
-        .gradient-gold { background: linear-gradient(135deg, #fbbf24 0%, #d97706 100%); }
-        .gradient-btc { background: linear-gradient(135deg, #6366f1 0%, #4338ca 100%); }
-        @keyframes pulse-soft { 0%, 100% { opacity: 1; } 50% { opacity: 0.7; } }
-        .loading-pulse { animation: pulse-soft 2s infinite; }
+        .glass {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        body {
+            background-color: #0f172a;
+            color: #f8fafc;
+        }
+        .loading-shimmer {
+            background: linear-gradient(90deg, #1e293b 25%, #334155 50%, #1e293b 75%);
+            background-size: 200% 100%;
+            animation: shimmer 1.5s infinite;
+        }
+        @keyframes shimmer {
+            0% { background-position: 200% 0; }
+            100% { background-position: -200% 0; }
+        }
     </style>
 </head>
 <body class="min-h-screen p-4 md:p-8">
-
-    <header class="max-w-6xl mx-auto flex flex-col md:flex-row justify-between items-center mb-10 gap-4">
-        <div>
-            <h1 class="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-yellow-400 to-blue-500">
-                AI Market Tracker
-            </h1>
-            <p class="text-slate-400">Theo dõi giá và dự đoán xu hướng bởi Gemini AI</p>
-        </div>
-        <div class="flex gap-4">
-            <button onclick="refreshData()" id="refreshBtn" class="px-6 py-2 bg-blue-600 hover:bg-blue-700 rounded-full transition-all font-semibold flex items-center gap-2">
-                <span id="refreshIcon">🔄</span> Cập nhật dữ liệu
+    <div class="max-w-6xl mx-auto">
+        <!-- Header -->
+        <header class="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
+            <div>
+                <h1 class="text-3xl font-bold text-yellow-500">AI Market Tracker</h1>
+                <p class="text-slate-400">Theo dõi giá và dự đoán xu hướng bởi Gemini AI</p>
+            </div>
+            <button onclick="updateData()" id="updateBtn" class="bg-blue-600 hover:bg-blue-700 px-6 py-2 rounded-full transition-all flex items-center gap-2 font-semibold shadow-lg shadow-blue-900/20">
+                <span id="btnText">🔄 Cập nhật dữ liệu</span>
             </button>
-        </div>
-    </header>
+        </header>
 
-    <main class="max-w-6xl mx-auto space-y-8">
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <!-- Thẻ Vàng -->
-            <div class="glass-card rounded-3xl p-6 relative overflow-hidden group">
-                <div class="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
-                    <svg class="w-24 h-24 text-yellow-500" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14l-5-4.87 6.91-1.01L12 2z"/></svg>
+        <!-- API Key Warning (Ẩn nếu đã có Key) -->
+        <div id="apiWarning" class="hidden mb-6 p-4 bg-red-900/30 border border-red-500 rounded-lg text-red-200">
+            <strong>Cảnh báo:</strong> Bạn chưa nhập API Key hoặc API Key không hợp lệ (Lỗi 403). Vui lòng kiểm tra lại trong mã nguồn.
+        </div>
+
+        <!-- Price Cards -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+            <!-- Gold Card -->
+            <div class="glass p-6 rounded-2xl relative overflow-hidden">
+                <div class="flex justify-between items-start mb-4">
+                    <h2 class="text-xl font-semibold text-yellow-500">Giá Vàng Thế Giới (Spot)</h2>
+                    <span class="text-3xl">✨</span>
                 </div>
-                <h3 class="text-xl font-semibold text-yellow-500 mb-2">Giá Vàng Thế Giới (Spot)</h3>
-                <div class="flex items-end gap-2">
-                    <span id="goldPrice" class="text-4xl font-bold">--</span>
-                    <span class="text-slate-400 mb-1">USD/oz</span>
-                </div>
-                <div id="goldChange" class="mt-2 text-sm font-medium">--</div>
+                <div id="goldPrice" class="text-4xl font-bold mb-2">--</div>
+                <div id="goldChange" class="text-sm">--</div>
             </div>
 
-            <!-- Thẻ Bitcoin -->
-            <div class="glass-card rounded-3xl p-6 relative overflow-hidden group">
-                <div class="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
-                    <svg class="w-24 h-24 text-blue-500" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2c5.52 0 10 4.48 10 10s-4.48 10-10 10S2 17.52 2 12 6.48 2 12 2zm3.5 11.5c.83 0 1.5-.67 1.5-1.5s-.67-1.5-1.5-1.5-1.5.67-1.5 1.5.67 1.5 1.5 1.5zm-7 0c.83 0 1.5-.67 1.5-1.5s-.67-1.5-1.5-1.5-1.5.67-1.5 1.5.67 1.5 1.5 1.5zm3.5 3c2.33 0 4.31-1.46 5.11-3.5H6.89c.8 2.04 2.78 3.5 5.11 3.5z"/></svg>
+            <!-- Bitcoin Card -->
+            <div class="glass p-6 rounded-2xl relative overflow-hidden">
+                <div class="flex justify-between items-start mb-4">
+                    <h2 class="text-xl font-semibold text-orange-500">Giá Bitcoin (BTC)</h2>
+                    <span class="text-3xl">₿</span>
                 </div>
-                <h3 class="text-xl font-semibold text-blue-400 mb-2">Giá Bitcoin (BTC)</h3>
-                <div class="flex items-end gap-2">
-                    <span id="btcPrice" class="text-4xl font-bold">--</span>
-                    <span class="text-slate-400 mb-1">USD</span>
-                </div>
-                <div id="btcChange" class="mt-2 text-sm font-medium">--</div>
+                <div id="btcPrice" class="text-4xl font-bold mb-2">--</div>
+                <div id="btcChange" class="text-sm">--</div>
             </div>
         </div>
 
-        <div class="glass-card rounded-3xl p-6">
-            <h3 class="text-xl font-semibold mb-6">Biểu đồ Xu hướng (7 ngày gần nhất)</h3>
-            <div class="h-[400px]">
-                <canvas id="marketChart"></canvas>
+        <!-- AI Insights -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div class="lg:col-span-2 glass p-6 rounded-2xl">
+                <h3 class="text-xl font-bold mb-4 flex items-center gap-2">
+                    📊 Phân tích xu hướng & Dự báo AI
+                </h3>
+                <div id="aiAnalysis" class="prose prose-invert max-w-none text-slate-300 space-y-4">
+                    <p>Nhấn "Cập nhật" để AI bắt đầu phân tích dữ liệu thị trường mới nhất...</p>
+                </div>
+            </div>
+
+            <div class="glass p-6 rounded-2xl">
+                <h3 class="text-xl font-bold mb-4">Lưu ý</h3>
+                <ul class="text-sm text-slate-400 space-y-3">
+                    <li>• Dữ liệu được AI tìm kiếm trực tiếp từ các nguồn tin cậy qua Google Search.</li>
+                    <li>• Các dự báo chỉ mang tính chất tham khảo, không phải lời khuyên tài chính.</li>
+                    <li>• Giá vàng tính theo USD/oz, Bitcoin tính theo USD.</li>
+                </ul>
             </div>
         </div>
-
-        <section class="space-y-6">
-            <div class="flex items-center gap-3">
-                <span class="p-2 bg-purple-600 rounded-lg">✨</span>
-                <h2 class="text-2xl font-bold">Phân tích AI & Dự báo</h2>
-            </div>
-
-            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <!-- Phân tích Vàng -->
-                <div class="glass-card rounded-3xl p-6 border-l-4 border-yellow-500">
-                    <h4 class="text-lg font-semibold text-yellow-500 mb-4">Nhận định Thị trường Vàng</h4>
-                    <div id="goldAnalysis" class="text-slate-300 leading-relaxed space-y-2">
-                        <p class="loading-pulse italic">Đang phân tích tin tức thị trường...</p>
-                    </div>
-                </div>
-
-                <!-- Phân tích Bitcoin -->
-                <div class="glass-card rounded-3xl p-6 border-l-4 border-blue-500">
-                    <h4 class="text-lg font-semibold text-blue-400 mb-4">Nhận định Thị trường Bitcoin</h4>
-                    <div id="btcAnalysis" class="text-slate-300 leading-relaxed space-y-2">
-                        <p class="loading-pulse italic">Đang tổng hợp dữ liệu blockchain...</p>
-                    </div>
-                </div>
-            </div>
-        </section>
-    </main>
+    </div>
 
     <script>
-        let myChart;
-        const API_KEY = "AIzaSyBDKXsyzR7FKQEDP00di9LqPryJpB6L7K0"; // Sẽ được hệ thống tự động điền khi chạy
+        // --- CẤU HÌNH API ---
+        // Thay API Key của bạn vào đây
+        const apiKey = ""; 
+        const modelName = "gemini-2.5-flash-preview-09-2025";
 
-        // Giả lập dữ liệu lịch sử để vẽ biểu đồ (Trong thực tế sẽ fetch từ API)
-        const generateMockHistory = () => {
-            const labels = [];
-            const goldData = [];
-            const btcData = [];
-            for (let i = 6; i >= 0; i--) {
-                const date = new Date();
-                date.setDate(date.getDate() - i);
-                labels.push(date.toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit' }));
-                goldData.push(2300 + Math.random() * 100);
-                btcData.push(60000 + Math.random() * 5000);
+        async function updateData() {
+            const btn = document.getElementById('updateBtn');
+            const btnText = document.getElementById('btnText');
+            const aiAnalysis = document.getElementById('aiAnalysis');
+            const warning = document.getElementById('apiWarning');
+
+            if (!apiKey) {
+                warning.classList.remove('hidden');
+                warning.innerText = "Lỗi: Bạn chưa điền API Key vào code (dòng 94). Vui lòng chỉnh sửa file trên GitHub.";
+                return;
             }
-            return { labels, goldData, btcData };
-        };
 
-        const initChart = () => {
-            const ctx = document.getElementById('marketChart').getContext('2d');
-            const history = generateMockHistory();
-            
-            myChart = new Chart(ctx, {
-                type: 'line',
-                data: {
-                    labels: history.labels,
-                    datasets: [
-                        {
-                            label: 'Vàng (USD/oz)',
-                            data: history.goldData,
-                            borderColor: '#fbbf24',
-                            backgroundColor: 'rgba(251, 191, 36, 0.1)',
-                            fill: true,
-                            tension: 0.4
-                        },
-                        {
-                            label: 'Bitcoin (USD)',
-                            data: history.btcData,
-                            borderColor: '#6366f1',
-                            backgroundColor: 'rgba(99, 102, 241, 0.1)',
-                            fill: true,
-                            tension: 0.4,
-                            yAxisID: 'y1'
-                        }
-                    ]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    scales: {
-                        y: {
-                            type: 'linear',
-                            display: true,
-                            position: 'left',
-                            grid: { color: 'rgba(255,255,255,0.05)' }
-                        },
-                        y1: {
-                            type: 'linear',
-                            display: true,
-                            position: 'right',
-                            grid: { drawOnChartArea: false }
-                        },
-                        x: { grid: { display: false } }
-                    },
-                    plugins: {
-                        legend: { labels: { color: '#f8fafc' } }
-                    }
-                }
-            });
-        };
+            btn.disabled = true;
+            btnText.innerText = "⏳ Đang phân tích...";
+            aiAnalysis.innerHTML = "<div class='loading-shimmer h-24 w-full rounded'></div>";
+            warning.classList.add('hidden');
 
-        async function fetchMarketData() {
-            const goldEl = document.getElementById('goldPrice');
-            const btcEl = document.getElementById('btcPrice');
-            const refreshBtn = document.getElementById('refreshBtn');
-
-            refreshBtn.disabled = true;
-            refreshBtn.innerHTML = "⌛ Đang xử lý...";
-
-            const userQuery = `Hãy tìm và cung cấp: 
-            1. Giá vàng spot thế giới hiện tại (USD/oz).
-            2. Giá Bitcoin hiện tại (USD).
-            3. Phân tích ngắn gọn (2-3 câu) về xu hướng của cả hai trong 24h tới dựa trên tin tức kinh tế mới nhất. 
-            Trả về kết quả dưới dạng JSON có cấu trúc: {"gold": number, "btc": number, "gold_analysis": "string", "btc_analysis": "string"}`;
-
-            const systemPrompt = "Bạn là một chuyên gia phân tích tài chính cao cấp. Hãy sử dụng Google Search để lấy dữ liệu thực tế mới nhất. Luôn trả về định dạng JSON hợp lệ.";
+            const prompt = "Hãy cung cấp giá vàng thế giới (USD/oz) và giá Bitcoin (USD) hiện tại. Sau đó phân tích ngắn gọn xu hướng thị trường trong 24h tới và dự đoán nên Mua, Bán hay Theo dõi. Trả về kết quả bằng tiếng Việt, định dạng rõ ràng.";
 
             try {
-                const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${API_KEY}`, {
+                const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${apiKey}`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
-                        contents: [{ parts: [{ text: userQuery }] }],
-                        tools: [{ "google_search": {} }],
-                        systemInstruction: { parts: [{ text: systemPrompt }] },
-                        generationConfig: { responseMimeType: "application/json" }
+                        contents: [{ parts: [{ text: prompt }] }],
+                        tools: [{ "google_search": {} }] // Kích hoạt tìm kiếm giá thực tế
                     })
                 });
 
-                const data = await response.json();
-                const result = JSON.parse(data.candidates[0].content.parts[0].text);
+                const result = await response.json();
 
-                // Cập nhật giao diện
-                goldEl.innerText = result.gold.toLocaleString();
-                btcEl.innerText = result.btc.toLocaleString();
+                if (response.status === 403) {
+                    throw new Error("Lỗi 403: API Key không có quyền truy cập hoặc sai model. Kiểm tra lại AI Studio.");
+                }
+
+                if (!result.candidates) {
+                    throw new Error(result.error?.message || "Không có phản hồi từ AI.");
+                }
+
+                const text = result.candidates[0].content.parts[0].text;
                 
-                document.getElementById('goldAnalysis').innerHTML = `<p>${result.gold_analysis}</p>`;
-                document.getElementById('btcAnalysis').innerHTML = `<p>${result.btc_analysis}</p>`;
-
-                // Cập nhật biểu đồ với giá mới nhất (giả lập điểm cuối)
-                myChart.data.datasets[0].data[6] = result.gold;
-                myChart.data.datasets[1].data[6] = result.btc;
-                myChart.update();
+                // Hiển thị nội dung
+                aiAnalysis.innerHTML = formatAIResponse(text);
+                
+                // Trích xuất giá (giả định AI trả về số trong văn bản)
+                extractPrices(text);
 
             } catch (error) {
-                console.error("Lỗi fetch dữ liệu:", error);
-                goldEl.innerText = "Error";
-                btcEl.innerText = "Error";
+                console.error(error);
+                aiAnalysis.innerHTML = `<p class="text-red-400">Lỗi: ${error.message}</p>`;
+                warning.classList.remove('hidden');
+                warning.innerText = `Lỗi hệ thống: ${error.message}`;
             } finally {
-                refreshBtn.disabled = false;
-                refreshBtn.innerHTML = "🔄 Cập nhật dữ liệu";
+                btn.disabled = false;
+                btnText.innerText = "🔄 Cập nhật dữ liệu";
             }
         }
 
-        function refreshData() {
-            fetchMarketData();
+        function formatAIResponse(text) {
+            return text.split('\n').map(line => `<p>${line}</p>`).join('');
         }
 
+        function extractPrices(text) {
+            // Hàm đơn giản để tìm con số cạnh đơn vị USD
+            const goldMatch = text.match(/(\d{1,3}(,\d{3})*(\.\d+)?)\s*USD\/oz/i);
+            const btcMatch = text.match(/(\d{1,3}(,\d{3})*(\.\d+)?)\s*USD/i);
+
+            if (goldMatch) document.getElementById('goldPrice').innerText = "$" + goldMatch[1];
+            if (btcMatch) document.getElementById('btcPrice').innerText = "$" + btcMatch[1];
+        }
+
+        // Tự động chạy lần đầu nếu có key
         window.onload = () => {
-            initChart();
-            fetchMarketData();
+            if (apiKey) updateData();
         };
     </script>
 </body>
