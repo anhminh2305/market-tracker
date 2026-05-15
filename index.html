@@ -94,7 +94,7 @@
         </div>
         
         <footer class="mt-12 text-center text-slate-600 text-sm">
-            Hệ thống phân tích tài chính AI • Dữ liệu cập nhật thời gian thực
+            Hệ thống phân tích tài chính AI • Dữ liệu cập nhật từ kiến thức mô hình
         </footer>
     </div>
 
@@ -102,7 +102,7 @@
         // CẤU HÌNH API - HÃY THAY KEY CỦA BẠN VÀO ĐÂY
         const apiKey = "AIzaSyBDKXsyzR7FKQEDP00di9LqPryJpB6L7K0"; 
         
-        // Danh sách các model để thử (phòng trường hợp tài khoản không hỗ trợ model cụ thể)
+        // Danh sách các model để thử
         const modelList = [
             "gemini-1.5-flash",
             "gemini-1.5-flash-latest",
@@ -121,9 +121,9 @@
             aiArea.innerHTML = "<div class='loading-shimmer h-32 w-full rounded-2xl'></div>";
             warning.classList.add('hidden');
 
-            const prompt = "Cung cấp giá vàng spot thế giới (USD/oz) và giá Bitcoin (USD) hiện tại. Phân tích ngắn xu hướng 24h tới bằng tiếng Việt.";
+            // Prompt được điều chỉnh để AI tự trả về giá tốt nhất từ dữ liệu huấn luyện mới nhất
+            const prompt = "Hãy đóng vai một chuyên gia tài chính. Cung cấp giá vàng thế giới hiện tại (USD/oz) và giá Bitcoin (USD) dựa trên dữ liệu mới nhất bạn có. Phân tích xu hướng thị trường 24h tới và đưa ra nhận định bằng tiếng Việt.";
 
-            // Hàm gọi API linh hoạt
             async function callGemini(model) {
                 const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
                 const res = await fetch(url, {
@@ -131,6 +131,7 @@
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
                         contents: [{ parts: [{ text: prompt }] }]
+                        // Google Search Grounding đã được loại bỏ tại đây
                     })
                 });
                 const data = await res.json();
@@ -149,24 +150,21 @@
                 return;
             }
 
-            // Thử từng model trong danh sách
             for (const model of modelList) {
                 try {
-                    console.log(`Đang thử model: ${model}`);
                     const text = await callGemini(model);
                     displayData(text);
                     success = true;
                     break; 
                 } catch (e) {
-                    console.warn(`Model ${model} thất bại: ${e.message}`);
                     lastError = e.message;
                 }
             }
 
             if (!success) {
-                warningText.innerText = "Lỗi hệ thống: " + lastError + ". Vui lòng kiểm tra lại API Key hoặc vùng hỗ trợ.";
+                warningText.innerText = "Lỗi: " + lastError;
                 warning.classList.remove('hidden');
-                aiArea.innerHTML = `<p class="text-red-400">Không thể kết nối với bất kỳ model nào. Lỗi cuối cùng: ${lastError}</p>`;
+                aiArea.innerHTML = `<p class="text-red-400">Lỗi kết nối API. Vui lòng kiểm tra lại Key hoặc thử lại sau.</p>`;
             }
 
             btn.disabled = false;
@@ -177,18 +175,17 @@
             const aiArea = document.getElementById('aiAnalysis');
             aiArea.innerHTML = text.split('\n').filter(l => l.trim() !== '').map(line => `<p class='mb-2'>${line}</p>`).join('');
             
-            // Tìm giá
             const prices = text.replace(/,/g, '');
             const goldMatch = prices.match(/(\d{4,}(\.\d+)?)/);
             const btcMatch = prices.match(/(\d{5,}(\.\d+)?)/);
 
             if(goldMatch) {
                 document.getElementById('goldPrice').innerText = Number(goldMatch[1]).toLocaleString();
-                document.getElementById('goldStatus').innerText = "✅ Đã cập nhật";
+                document.getElementById('goldStatus').innerText = "✅ Cập nhật từ AI";
             }
             if(btcMatch) {
                 document.getElementById('btcPrice').innerText = Number(btcMatch[1]).toLocaleString();
-                document.getElementById('btcStatus').innerText = "✅ Đã cập nhật";
+                document.getElementById('btcStatus').innerText = "✅ Cập nhật từ AI";
             }
         }
 
