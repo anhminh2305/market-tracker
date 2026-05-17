@@ -1,26 +1,62 @@
-<form id="myForm" onsubmit="handleFormSubmit(event)">
-    <input type="text" name="name" placeholder="Họ tên" required><br><br>
-    <input type="email" name="email" placeholder="Email" required><br><br>
-    <button type="submit">Gửi thông tin</button>
-</form>
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Trải Nghiệm Học Google Tag Manager</title>
+<!-- Google Tag Manager -->
+    <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+    new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+    j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+    'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+    })(window,document,'script','dataLayer','GTM-PTFJKKW5');</script>
+<!-- End Google Tag Manager -->
+    </head>
+<body>
+<!-- Google Tag Manager (noscript) -->
+    <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-PTFJKKW5"
+    height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+<!-- End Google Tag Manager (noscript) -->
+    <div style="max-width: 400px; margin: 50px auto; padding: 20px; border: 1px solid #ccc; border-radius: 8px; font-family: Arial, sans-serif;">
+        
+        <form id="myForm" onsubmit="handleFormSubmit(event)">
+            <h2>Form Đăng Ký Trải Nghiệm</h2>
+            <p>Điền thông tin bên dưới để test cơ chế tracking GTM.</p>
+            
+            <label for="name">Họ và tên:</label><br>
+            <input type="text" id="name" name="name" placeholder="Nguyễn Văn A" required style="width: 100%; padding: 8px; margin: 8px 0 15px 0;"><br>
+            
+            <label for="email">Email:</label><br>
+            <input type="email" id="email" name="email" placeholder="abc@gmail.com" required style="width: 100%; padding: 8px; margin: 8px 0 15px 0;"><br>
+            
+            <button type="submit" style="background-color: #007bff; color: white; padding: 10px 15px; border: none; border-radius: 4px; cursor: pointer; width: 100%;">
+                Gửi thông tin (Submit Form)
+            </button>
+        </form>
 
-<div id="successMessage" style="display: none; color: green; margin-top: 20px;">
-    <h3>Chúc mừng! Bạn đã submit form thành công.</h3>
-</div>
+        <div id="successMessage" style="display: none; text-align: center; color: green; padding: 20px 0;">
+            <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-bottom: 10px;"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
+            <h3>Chúc mừng!</h3>
+            <p>Bạn đã gửi thông tin thành công.</p>
+        </div>
 
-<script>
-function handleFormSubmit(event) {
-    event.preventDefault(); // Chặn không cho trang web bị tải lại
+    </div>
 
-    // 1. Ẩn form đi và hiện thông báo thành công lên màn hình
-    document.getElementById("myForm").style.display = "none";
-    document.getElementById("successMessage").style.display = "block";
+    <script>
+    function handleFormSubmit(event) {
+        event.preventDefault(); // Ngăn trang web tải lại (giúp giữ kết nối với GTM Preview)
 
-    // 2. (Nâng cao cho GTM) Bắn một sự kiện lên dataLayer để GTM bắt được ngay lập tức
-    window.dataLayer = window.dataLayer || [];
-    window.dataLayer.push({
-        'event': 'form_submit_success',
-        'form_id': 'myForm'
-    });
-}
-</script>
+        // 1. Ẩn form nhập liệu đi và hiển thị khối thông báo thành công lên
+        document.getElementById("myForm").style.display = "none";
+        document.getElementById("successMessage").style.display = "block";
+
+        // 2. Đẩy một sự kiện (Event) tùy biến lên dataLayer để GTM "bắt" được ngay lập tức
+        window.dataLayer = window.dataLayer || [];
+        window.dataLayer.push({
+            'event': 'form_submit_success', // Đây là tên sự kiện bạn sẽ dùng làm Trigger trong GTM
+            'form_name': 'Form_Dang_Ky_Mien_Phi'
+        });
+    }
+    </script>
+</body>
+</html>
